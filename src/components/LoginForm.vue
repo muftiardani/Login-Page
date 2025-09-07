@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from "vue";
 
-const emit = defineEmits(["submit-login", "switch-to-register"]);
+const emit = defineEmits(["submit-login"]);
 
 const username = ref("");
 const password = ref("");
@@ -38,12 +38,8 @@ function handleSubmit() {
     <div class="toggle-view">
       <p>
         Belum punya akun?
-        <a @click.prevent="emit('switch-to-register')" href="#">Daftar</a>
+        <router-link to="/register">Daftar</router-link>
       </p>
     </div>
   </form>
 </template>
-
-<style scoped>
-/* Scoped styles for LoginForm */
-</style>

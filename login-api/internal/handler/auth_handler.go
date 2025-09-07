@@ -2,7 +2,6 @@ package handler
 
 import (
 	"encoding/json"
-	"log"
 	"login-api/internal/auth"
 	"login-api/internal/model"
 	"login-api/internal/storage"
@@ -52,7 +51,6 @@ func (h *AuthHandler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("User registered: %s", creds.Username)
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(model.Response{Message: "Registration successful!", Success: true})
 }
@@ -81,7 +79,6 @@ func (h *AuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("User logged in: %s", creds.Username)
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(model.Response{
 		Message: "Login successful!",

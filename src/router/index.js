@@ -4,18 +4,25 @@ import StatusView from '@/views/StatusView.vue';
 
 const routes = [
     {
-        path: '/auth',
-        name: 'Auth',
+        path: '/login',
+        name: 'Login',
         component: AuthView,
-        meta: { requiresGuest: true } // Hanya bisa diakses jika belum login
+        props: { initialView: 'login' },
+        meta: { requiresGuest: true }
+    },
+    {
+        path: '/register',
+        name: 'Register',
+        component: AuthView,
+        props: { initialView: 'register' },
+        meta: { requiresGuest: true }
     },
     {
         path: '/',
         name: 'Status',
         component: StatusView,
-        meta: { requiresAuth: true } // Hanya bisa diakses jika sudah login
+        meta: { requiresAuth: true }
     },
-    // Tambahkan fallback route untuk mengarahkan pengguna
     {
         path: '/:pathMatch(.*)*',
         redirect: '/'
@@ -27,18 +34,14 @@ const router = createRouter({
     routes,
 });
 
-// Navigation Guard
 router.beforeEach((to, from, next) => {
     const isLoggedIn = !!localStorage.getItem('token');
 
     if (to.meta.requiresAuth && !isLoggedIn) {
-        // Jika rute butuh login tapi pengguna belum login, arahkan ke /auth
-        next('/auth');
+        next('/login');
     } else if (to.meta.requiresGuest && isLoggedIn) {
-        // Jika rute untuk tamu tapi pengguna sudah login, arahkan ke /
         next('/');
     } else {
-        // Lanjutkan navigasi
         next();
     }
 });

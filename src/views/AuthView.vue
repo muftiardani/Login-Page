@@ -4,18 +4,8 @@
       {{ message }}
     </div>
 
-    <Transition name="fade-slide" mode="out-in">
-      <LoginForm
-        v-if="currentView === 'login'"
-        @submit-login="onLogin"
-        @switch-to-register="switchToRegister"
-      />
-      <RegisterForm
-        v-else
-        @submit-register="onRegister"
-        @switch-to-login="switchToLogin"
-      />
-    </Transition>
+    <LoginForm v-if="props.initialView === 'login'" @submit-login="onLogin" />
+    <RegisterForm v-else @submit-register="onRegister" />
   </div>
 </template>
 
@@ -25,8 +15,14 @@ import { useAuthStore } from '@/stores/auth';
 import LoginForm from '@/components/LoginForm.vue';
 import RegisterForm from '@/components/RegisterForm.vue';
 
+const props = defineProps({
+  initialView: {
+    type: String,
+    required: true,
+  }
+});
+
 const authStore = useAuthStore();
-const currentView = ref('login');
 const message = ref('');
 const messageClass = ref('');
 
@@ -41,23 +37,11 @@ async function onLogin(credentials) {
 async function onRegister(credentials) {
   const result = await authStore.handleRegister(credentials);
   if (result.success) {
-    message.value = `✅ ${result.message}`;
+    message.value = `✅ ${result.message} Silakan login.`;
     messageClass.value = 'success';
-    // Otomatis pindah ke login setelah registrasi berhasil
-    switchToLogin(); 
   } else {
     message.value = `❌ ${result.message}`;
     messageClass.value = 'error';
   }
-}
-
-function switchToLogin() {
-  currentView.value = 'login';
-  message.value = '';
-}
-
-function switchToRegister() {
-  currentView.value = 'register';
-  message.value = '';
 }
 </script>

@@ -1,16 +1,16 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import { useRouter } from 'vue-router';
+import router from '@/router';
 import * as api from '@/api/auth';
 
 export const useAuthStore = defineStore('auth', () => {
     // State
     const user = ref(localStorage.getItem('username') || null);
     const token = ref(localStorage.getItem('token') || null);
-    const router = useRouter();
 
     // Getters
     const isLoggedIn = computed(() => !!token.value);
+    const isAuthenticated = computed(() => !!token.value);
 
     // Actions
     async function handleLogin(credentials) {
@@ -20,7 +20,7 @@ export const useAuthStore = defineStore('auth', () => {
             user.value = credentials.username;
             localStorage.setItem('token', data.token);
             localStorage.setItem('username', credentials.username);
-            router.push('/'); // Arahkan ke halaman status setelah login
+            await router.push('/');
             return { success: true, message: data.message };
         } catch (error) {
             return { success: false, message: error.message };
@@ -41,8 +41,8 @@ export const useAuthStore = defineStore('auth', () => {
         user.value = null;
         localStorage.removeItem('token');
         localStorage.removeItem('username');
-        router.push('/auth'); // Arahkan ke halaman login setelah logout
+        router.push('/login');
     }
 
-    return { user, token, isLoggedIn, handleLogin, handleRegister, handleLogout };
+    return { user, token, isLoggedIn, isAuthenticated, handleLogin, handleRegister, handleLogout };
 });

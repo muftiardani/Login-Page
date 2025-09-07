@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"log"
 	"login-api/internal/auth"
 	"login-api/internal/model"
 	"login-api/internal/storage"
@@ -46,6 +47,8 @@ func (h *AuthHandler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Menggunakan Store Interface untuk membuat user
 	if err := h.Store.CreateUser(newUser); err != nil {
+		log.Printf("Failed to register user: %v\n", err)
+
 		w.WriteHeader(http.StatusConflict)
 		json.NewEncoder(w).Encode(model.Response{Message: "Username already exists", Success: false})
 		return
@@ -64,7 +67,6 @@ func (h *AuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Menggunakan Store Interface untuk mendapatkan user
 	user, ok := h.Store.GetUser(creds.Username)
 	if !ok || bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(creds.Password)) != nil {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -72,7 +74,6 @@ func (h *AuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Memanggil fungsi dari package auth untuk membuat token
 	tokenString, err := auth.GenerateJWT(creds.Username, h.JwtKey)
 	if err != nil {
 		http.Error(w, `{"message":"Could not generate token"}`, http.StatusInternalServerError)

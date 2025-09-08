@@ -4,15 +4,12 @@ import router from '@/router';
 import * as api from '@/api/auth';
 
 export const useAuthStore = defineStore('auth', () => {
-    // State
     const user = ref(localStorage.getItem('username') || null);
     const token = ref(localStorage.getItem('token') || null);
 
-    // Getters
     const isLoggedIn = computed(() => !!token.value);
     const isAuthenticated = computed(() => !!token.value);
 
-    // Actions
     async function handleLogin(credentials) {
         try {
             const data = await api.login(credentials);

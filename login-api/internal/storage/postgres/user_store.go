@@ -17,7 +17,6 @@ func NewPostgresUserStore(db *pgxpool.Pool) *PostgresUserStore {
 	return &PostgresUserStore{DB: db}
 }
 
-// GetUser mencari pengguna berdasarkan username di database.
 func (s *PostgresUserStore) GetUser(username string) (model.User, bool) {
 	var user model.User
 	query := "SELECT username, password_hash FROM users WHERE username = $1"
@@ -33,7 +32,6 @@ func (s *PostgresUserStore) GetUser(username string) (model.User, bool) {
 	return user, true
 }
 
-// CreateUser menyimpan pengguna baru ke dalam database.
 func (s *PostgresUserStore) CreateUser(user model.User) error {
 	query := "INSERT INTO users (username, password_hash) VALUES ($1, $2)"
 

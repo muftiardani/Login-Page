@@ -45,7 +45,6 @@ func (h *AuthHandler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		PasswordHash: string(hashedPassword),
 	}
 
-	// Menggunakan Store Interface untuk membuat user
 	if err := h.Store.CreateUser(newUser); err != nil {
 		log.Printf("Gagal mendaftarkan pengguna: %v\n", err)
 

@@ -13,7 +13,6 @@ type PostgresUserStore struct {
 	DB *pgxpool.Pool
 }
 
-// NewPostgresUserStore membuat instance baru dari PostgresUserStore.
 func NewPostgresUserStore(db *pgxpool.Pool) *PostgresUserStore {
 	return &PostgresUserStore{DB: db}
 }

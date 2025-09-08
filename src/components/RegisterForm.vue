@@ -16,9 +16,9 @@ function handleSubmit() {
 
 <template>
   <form @submit.prevent="handleSubmit" class="auth-form">
-    <h2>Registrasi</h2>
+    <h2>Buat Akun Baru</h2>
     <div class="input-group">
-      <label for="register-username">Username</label>
+      <label for="register-username">Nama Pengguna</label>
       <input
         type="text"
         id="register-username"
@@ -28,7 +28,7 @@ function handleSubmit() {
       />
     </div>
     <div class="input-group">
-      <label for="register-password">Password</label>
+      <label for="register-password">Kata Sandi</label>
       <input
         type="password"
         id="register-password"
@@ -37,11 +37,11 @@ function handleSubmit() {
         autocomplete="new-password"
       />
     </div>
-    <button type="submit" class="submit-button">Registrasi</button>
+    <button type="submit" class="submit-button">Daftar Sekarang</button>
     <div class="toggle-view">
       <p>
         Sudah punya akun?
-        <router-link to="/login">Login</router-link>
+        <router-link to="/login">Masuk di sini</router-link>
       </p>
     </div>
   </form>

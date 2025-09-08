@@ -4,8 +4,10 @@
       {{ message }}
     </div>
 
-    <LoginForm v-if="props.initialView === 'login'" @submit-login="onLogin" />
-    <RegisterForm v-else @submit-register="onRegister" />
+    <Transition name="fade-slide" mode="out-in">
+      <LoginForm v-if="props.initialView === 'login'" @submit-login="onLogin" />
+      <RegisterForm v-else @submit-register="onRegister" />
+    </Transition>
   </div>
 </template>
 
@@ -29,7 +31,7 @@ const messageClass = ref('');
 async function onLogin(credentials) {
   const result = await authStore.handleLogin(credentials);
   if (!result.success) {
-    message.value = `❌ ${result.message}`;
+    message.value = `Ups! ${result.message}`;
     messageClass.value = 'error';
   }
 }
@@ -37,10 +39,10 @@ async function onLogin(credentials) {
 async function onRegister(credentials) {
   const result = await authStore.handleRegister(credentials);
   if (result.success) {
-    message.value = `✅ ${result.message} Silakan login.`;
+    message.value = `Hore! ${result.message} Silakan masuk untuk melanjutkan.`;
     messageClass.value = 'success';
   } else {
-    message.value = `❌ ${result.message}`;
+    message.value = `Maaf, ${result.message}`;
     messageClass.value = 'error';
   }
 }

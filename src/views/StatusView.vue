@@ -1,8 +1,8 @@
 <template>
   <div class="card-container status-view">
     <h2>Halo, {{ authStore.user }}!</h2>
-    <p class="welcome-message">Anda berhasil login.</p>
-    <button @click="logout" class="logout-button">Logout</button>
+    <p class="welcome-message">Selamat datang kembali! Anda berhasil masuk.</p>
+    <button @click="logout" class="logout-button">Keluar</button>
   </div>
 </template>
 

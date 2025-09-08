@@ -8,18 +8,19 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+// NewJwtMiddleware membuat middleware baru yang menggunakan jwtKey yang diberikan untuk validasi.
 func NewJwtMiddleware(jwtKey []byte) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			authHeader := r.Header.Get("Authorization")
 			if authHeader == "" {
-				http.Error(w, `{"message":"Missing token"}`, http.StatusUnauthorized)
+				http.Error(w, `{"message":"Token otentikasi tidak ditemukan. Harap sertakan di header Authorization."}`, http.StatusUnauthorized)
 				return
 			}
 
 			tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 			if tokenString == authHeader {
-				http.Error(w, `{"message":"Invalid token format"}`, http.StatusUnauthorized)
+				http.Error(w, `{"message":"Format token tidak valid. Pastikan menggunakan format 'Bearer <token>'."}`, http.StatusUnauthorized)
 				return
 			}
 
@@ -29,7 +30,7 @@ func NewJwtMiddleware(jwtKey []byte) func(http.Handler) http.Handler {
 			})
 
 			if err != nil || !token.Valid {
-				http.Error(w, `{"message":"Invalid token"}`, http.StatusUnauthorized)
+				http.Error(w, `{"message":"Token tidak valid atau telah kedaluwarsa. Silakan login kembali."}`, http.StatusUnauthorized)
 				return
 			}
 

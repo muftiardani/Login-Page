@@ -68,6 +68,8 @@ func (h *AuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	user, ok := h.Store.GetUser(creds.Username)
 	if !ok || bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(creds.Password)) != nil {
+		log.Printf("Upaya login gagal untuk pengguna: %s", creds.Username)
+		
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(model.Response{Message: "Nama pengguna atau kata sandi salah.", Success: false})
 		return
@@ -78,6 +80,8 @@ func (h *AuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, `{"message":"Gagal membuat token."}`, http.StatusInternalServerError)
 		return
 	}
+    
+	log.Printf("Pengguna '%s' berhasil login.", creds.Username)
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(model.Response{

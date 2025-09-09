@@ -20,7 +20,7 @@ function togglePasswordVisibility() {
   <form @submit.prevent="handleSubmit" class="auth-form">
     <h2>Selamat Datang</h2>
     <div class="input-group">
-      <label for="login-email">Alamat Email</label>
+      <label for="login-email">Email</label>
       <input
         type="email"
         id="login-email"

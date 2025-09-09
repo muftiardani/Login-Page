@@ -24,7 +24,7 @@
 
 body {
   font-family: var(--font-family);
-  background: linear-gradient(135deg, var(--background-color) 0%, #dee2e6 100%); /* Gradien abu-abu terang */
+  background: linear-gradient(135deg, var(--background-color) 0%, #dee2e6 100%);
   color: var(--text-color);
   min-height: 100vh;
   display: flex;
@@ -117,7 +117,7 @@ body {
   transform: translateY(-50%);
   cursor: pointer;
   user-select: none;
-  font-size: 1.5rem;
+  font-size: 1.2rem;
   line-height: 1;
   color: var(--secondary-color);
 }
@@ -229,13 +229,13 @@ body {
 }
 
 .notification.success {
-  background-color: rgba(40, 167, 69, 0.1); /* Hijau transparan */
+  background-color: rgba(40, 167, 69, 0.1);
   color: var(--success-color);
   border: 1px solid var(--success-color);
 }
 
 .notification.error {
-  background-color: rgba(220, 53, 69, 0.1); /* Merah transparan */
+  background-color: rgba(220, 53, 69, 0.1);
   color: var(--error-color);
   border: 1px solid var(--error-color);
 }

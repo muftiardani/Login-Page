@@ -5,9 +5,14 @@ const emit = defineEmits(["submit-login"]);
 
 const email = ref("");
 const password = ref("");
+const isPasswordVisible = ref(false);
 
 function handleSubmit() {
   emit("submit-login", { email: email.value, password: password.value });
+}
+
+function togglePasswordVisibility() {
+  isPasswordVisible.value = !isPasswordVisible.value;
 }
 </script>
 
@@ -26,13 +31,18 @@ function handleSubmit() {
     </div>
     <div class="input-group">
       <label for="login-password">Kata Sandi</label>
-      <input
-        type="password"
-        id="login-password"
-        v-model="password"
-        required
-        autocomplete="current-password"
-      />
+      <div class="password-wrapper">
+        <input
+          :type="isPasswordVisible ? 'text' : 'password'"
+          id="login-password"
+          v-model="password"
+          required
+          autocomplete="current-password"
+        />
+        <span @click="togglePasswordVisibility" class="password-toggle-icon">
+          {{ isPasswordVisible ? '🙈' : '👁️' }}
+        </span>
+      </div>
     </div>
     <button type="submit" class="submit-button">Masuk</button>
     <div class="toggle-view">

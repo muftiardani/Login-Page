@@ -1,49 +1,90 @@
-<template>
-  <div class="card-container">
-    <div v-if="message" :class="['message', messageClass]">
-      {{ message }}
-    </div>
+<script setup>
+import { ref, watch } from "vue";
+import { useRoute } from "vue-router";
+import { useAuthStore } from "@/stores/auth";
+import LoginForm from "@/components/LoginForm.vue";
+import RegisterForm from "@/components/RegisterForm.vue";
 
-    <Transition name="fade-slide" mode="out-in">
-      <LoginForm v-if="props.initialView === 'login'" @submit-login="onLogin" />
-      <RegisterForm v-else @submit-register="onRegister" />
+const route = useRoute();
+const authStore = useAuthStore();
+
+const currentView = ref(route.path);
+const notification = ref({
+  message: "",
+  type: "",
+  show: false,
+});
+
+watch(
+  () => route.path,
+  (newPath) => {
+    currentView.value = newPath;
+    notification.value.show = false;
+  }
+);
+
+async function handleLogin(credentials) {
+  const result = await authStore.handleLogin(credentials);
+  if (!result.success) {
+    showNotification(result.message, "error");
+  }
+}
+
+async function handleRegister(credentials) {
+  const result = await authStore.handleRegister(credentials);
+  showNotification(result.message, result.success ? "success" : "error");
+  if (result.success) {
+  }
+}
+
+function showNotification(message, type) {
+  notification.value.message = message;
+  notification.value.type = type;
+  notification.value.show = true;
+  setTimeout(() => {
+    notification.value.show = false;
+  }, 5000);
+}
+</script>
+
+<template>
+  <div class="auth-container">
+    <Transition name="slide-fade" mode="out-in">
+      <div v-if="notification.show" :key="notification.message" :class="['notification', notification.type]">
+        <span class="notification-icon">
+          <template v-if="notification.type === 'success'">✅</template>
+          <template v-else>❌</template>
+        </span>
+        {{ notification.message }}
+      </div>
+    </Transition>
+
+    <Transition name="fade" mode="out-in">
+      <LoginForm v-if="currentView === '/login'" @submit-login="handleLogin" key="login" />
+      <RegisterForm v-else-if="currentView === '/register'" @submit-register="handleRegister" key="register" />
     </Transition>
   </div>
 </template>
 
-<script setup>
-import { ref } from 'vue';
-import { useAuthStore } from '@/stores/auth';
-import LoginForm from '@/components/LoginForm.vue';
-import RegisterForm from '@/components/RegisterForm.vue';
-
-const props = defineProps({
-  initialView: {
-    type: String,
-    required: true,
-  }
-});
-
-const authStore = useAuthStore();
-const message = ref('');
-const messageClass = ref('');
-
-async function onLogin(credentials) {
-  const result = await authStore.handleLogin(credentials);
-  if (!result.success) {
-    message.value = `Ups! ${result.message}`;
-    messageClass.value = 'error';
-  }
+<style scoped>
+/* Transisi untuk notifikasi */
+.slide-fade-enter-active,
+.slide-fade-leave-active {
+  transition: all 0.5s ease;
+}
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+  transform: translateY(-20px);
+  opacity: 0;
 }
 
-async function onRegister(credentials) {
-  const result = await authStore.handleRegister(credentials);
-  if (result.success) {
-    message.value = `Hore! ${result.message} Silakan masuk untuk melanjutkan.`;
-    messageClass.value = 'success';
-  } else {
-    message.value = `Maaf, ${result.message}`;
-    messageClass.value = 'error';
-  }
+/* Transisi untuk formulir */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.5s ease;
 }
-</script>
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>

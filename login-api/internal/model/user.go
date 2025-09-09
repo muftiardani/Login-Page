@@ -3,17 +3,17 @@ package model
 import "github.com/golang-jwt/jwt/v5"
 
 type User struct {
-	Username     string `json:"username"`
+	Email        string `json:"email"`
 	PasswordHash string `json:"-"`
 }
 
 type Credentials struct {
-	Username string `json:"username"`
+	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
 type Claims struct {
-	Username string `json:"username"`
+	Email string `json:"email"`
 	jwt.RegisteredClaims
 }
 

@@ -3,12 +3,12 @@ import { ref } from "vue";
 
 const emit = defineEmits(["submit-register"]);
 
-const username = ref("");
+const email = ref("");
 const password = ref("");
 
 function handleSubmit() {
   emit("submit-register", {
-    username: username.value,
+    email: email.value,
     password: password.value,
   });
 }
@@ -18,13 +18,13 @@ function handleSubmit() {
   <form @submit.prevent="handleSubmit" class="auth-form">
     <h2>Buat Akun Baru</h2>
     <div class="input-group">
-      <label for="register-username">Nama Pengguna</label>
+      <label for="register-email">Alamat Email</label>
       <input
-        type="text"
-        id="register-username"
-        v-model="username"
+        type="email"
+        id="register-email"
+        v-model="email"
         required
-        autocomplete="username"
+        autocomplete="email"
       />
     </div>
     <div class="input-group">

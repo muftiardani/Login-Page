@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"log"
 	"login-api/internal/model"
 	"net/http"
 	"strings"
@@ -9,6 +8,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+// NewJwtMiddleware membuat middleware baru yang menggunakan jwtKey yang diberikan untuk validasi.
 func NewJwtMiddleware(jwtKey []byte) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -33,8 +33,6 @@ func NewJwtMiddleware(jwtKey []byte) func(http.Handler) http.Handler {
 				http.Error(w, `{"message":"Token tidak valid atau telah kedaluwarsa. Silakan login kembali."}`, http.StatusUnauthorized)
 				return
 			}
-
-			log.Printf("Akses terotentikasi ke %s dari pengguna: %s", r.URL.Path, claims.Username)
 
 			next.ServeHTTP(w, r)
 		})

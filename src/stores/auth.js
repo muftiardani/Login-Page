@@ -4,7 +4,7 @@ import router from '@/router';
 import * as api from '@/api/auth';
 
 export const useAuthStore = defineStore('auth', () => {
-    const user = ref(localStorage.getItem('username') || null);
+    const user = ref(localStorage.getItem('email') || null);
     const token = ref(localStorage.getItem('token') || null);
 
     const isLoggedIn = computed(() => !!token.value);
@@ -14,9 +14,9 @@ export const useAuthStore = defineStore('auth', () => {
         try {
             const data = await api.login(credentials);
             token.value = data.token;
-            user.value = credentials.username;
+            user.value = credentials.email;
             localStorage.setItem('token', data.token);
-            localStorage.setItem('username', credentials.username);
+            localStorage.setItem('email', credentials.email);
             await router.push('/');
             return { success: true, message: data.message };
         } catch (error) {
@@ -37,7 +37,7 @@ export const useAuthStore = defineStore('auth', () => {
         token.value = null;
         user.value = null;
         localStorage.removeItem('token');
-        localStorage.removeItem('username');
+        localStorage.removeItem('email');
         router.push('/login');
     }
 

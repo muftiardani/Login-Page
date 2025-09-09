@@ -7,10 +7,10 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func GenerateJWT(username string, jwtKey []byte) (string, error) {
+func GenerateJWT(email string, jwtKey []byte) (string, error) {
 	expirationTime := time.Now().Add(5 * time.Minute)
 	claims := &model.Claims{
-		Username: username,
+		Email: email,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expirationTime),
 		},

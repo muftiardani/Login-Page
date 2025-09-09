@@ -18,19 +18,19 @@ func NewMemoryUserStore() *MemoryUserStore {
 	}
 }
 
-func (s *MemoryUserStore) GetUser(username string) (model.User, bool) {
+func (s *MemoryUserStore) GetUser(email string) (model.User, bool) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
-	user, exists := s.users[username]
+	user, exists := s.users[email]
 	return user, exists
 }
 
 func (s *MemoryUserStore) CreateUser(user model.User) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	if _, exists := s.users[user.Username]; exists {
-		return errors.New("username already exists")
+	if _, exists := s.users[user.Email]; exists {
+		return errors.New("email already exists")
 	}
-	s.users[user.Username] = user
+	s.users[user.Email] = user
 	return nil
 }

@@ -17,11 +17,11 @@ func NewPostgresUserStore(db *pgxpool.Pool) *PostgresUserStore {
 	return &PostgresUserStore{DB: db}
 }
 
-func (s *PostgresUserStore) GetUser(username string) (model.User, bool) {
+func (s *PostgresUserStore) GetUser(email string) (model.User, bool) {
 	var user model.User
-	query := "SELECT username, password_hash FROM users WHERE username = $1"
+	query := "SELECT email, password_hash FROM users WHERE email = $1"
 
-	err := s.DB.QueryRow(context.Background(), query, username).Scan(&user.Username, &user.PasswordHash)
+	err := s.DB.QueryRow(context.Background(), query, email).Scan(&user.Email, &user.PasswordHash)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return model.User{}, false
@@ -33,9 +33,9 @@ func (s *PostgresUserStore) GetUser(username string) (model.User, bool) {
 }
 
 func (s *PostgresUserStore) CreateUser(user model.User) error {
-	query := "INSERT INTO users (username, password_hash) VALUES ($1, $2)"
+	query := "INSERT INTO users (email, password_hash) VALUES ($1, $2)"
 
-	_, err := s.DB.Exec(context.Background(), query, user.Username, user.PasswordHash)
+	_, err := s.DB.Exec(context.Background(), query, user.Email, user.PasswordHash)
 	if err != nil {
 		return fmt.Errorf("database error on create user: %w", err)
 	}

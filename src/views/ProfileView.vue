@@ -7,11 +7,17 @@ import router from '@/router';
 const authStore = useAuthStore();
 const oldPassword = ref('');
 const newPassword = ref('');
+const confirmNewPassword = ref('');
 const notification = ref({ message: '', type: '', show: false });
 
 async function handleChangePassword() {
-  if (!oldPassword.value || !newPassword.value) {
+  if (!oldPassword.value || !newPassword.value || !confirmNewPassword.value) {
     showNotification('Semua kolom harus diisi', 'error');
+    return;
+  }
+
+  if (newPassword.value !== confirmNewPassword.value) {
+    showNotification('Konfirmasi kata sandi baru tidak cocok.', 'error');
     return;
   }
 
@@ -25,6 +31,7 @@ async function handleChangePassword() {
     showNotification(result.message, 'success');
     oldPassword.value = '';
     newPassword.value = '';
+    confirmNewPassword.value = '';
   } catch (error) {
     showNotification(error.message, 'error');
   }
@@ -59,6 +66,10 @@ function goBack() {
       <div class="input-group">
         <label for="new-password">Kata Sandi Baru</label>
         <input type="password" id="new-password" v-model="newPassword" required autocomplete="new-password" />
+      </div>
+      <div class="input-group">
+        <label for="confirm-new-password">Konfirmasi Kata Sandi Baru</label>
+        <input type="password" id="confirm-new-password" v-model="confirmNewPassword" required autocomplete="new-password" />
       </div>
       <button type="submit" class="submit-button">Simpan Perubahan</button>
       <button type="button" @click="goBack" class="submit-button" style="margin-top: 1rem; background: #6c757d;">Kembali</button>

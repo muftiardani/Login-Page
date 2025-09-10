@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import AuthView from '@/views/AuthView.vue';
 import StatusView from '@/views/StatusView.vue';
+import ProfileView from '@/views/ProfileView.vue';
 
 const routes = [
     {
@@ -21,6 +22,12 @@ const routes = [
         path: '/',
         name: 'Status',
         component: StatusView,
+        meta: { requiresAuth: true }
+    },
+    {
+        path: '/profile',
+        name: 'Profile',
+        component: ProfileView,
         meta: { requiresAuth: true }
     },
     {

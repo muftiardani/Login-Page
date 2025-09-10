@@ -41,7 +41,6 @@ func NewJwtMiddleware(jwtKey []byte) func(http.Handler) http.Handler {
 				return
 			}
 
-			// Jika token valid, lanjutkan ke handler berikutnya
 			next.ServeHTTP(w, r)
 		})
 	}

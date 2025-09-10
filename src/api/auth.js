@@ -36,3 +36,15 @@ export async function getStatus(token) {
     });
     return handleResponse(response);
 }
+
+export async function changePassword(token, payload) {
+    const response = await fetch(`${API_BASE_URL}/user/password`, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+    });
+    return handleResponse(response);
+}

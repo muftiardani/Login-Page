@@ -46,3 +46,15 @@ func (s *PostgresUserStore) CreateUser(user model.User) error {
 
 	return nil
 }
+
+// UpdateUser memperbarui data pengguna di database.
+func (s *PostgresUserStore) UpdateUser(oldEmail string, user model.User) error {
+	query := "UPDATE users SET email = $1, password_hash = $2 WHERE email = $3"
+
+	_, err := s.DB.Exec(context.Background(), query, user.Email, user.PasswordHash, oldEmail)
+	if err != nil {
+		return fmt.Errorf("kesalahan saat memperbarui pengguna di database: %w", err)
+	}
+
+	return nil
+}

@@ -97,6 +97,54 @@ func (h *AuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// ChangePasswordHandler menangani permintaan perubahan password.
+func (h *AuthHandler) ChangePasswordHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("INFO: Menerima permintaan ubah password dari alamat IP: %s", r.RemoteAddr)
+	w.Header().Set("Content-Type", "application/json")
+
+	var req struct {
+		Email       string `json:"email"`
+		OldPassword string `json:"oldPassword"`
+		NewPassword string `json:"newPassword"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, `{"message":"Format permintaan tidak sesuai."}`, http.StatusBadRequest)
+		return
+	}
+
+	user, ok := h.Store.GetUser(req.Email)
+	if !ok {
+		http.Error(w, `{"message":"Pengguna tidak ditemukan."}`, http.StatusNotFound)
+		return
+	}
+
+	if bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.OldPassword)) != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(model.Response{Message: "Kata sandi lama salah.", Success: false})
+		return
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		log.Printf("KRITIS: Gagal melakukan hash password baru untuk email %s: %v", req.Email, err)
+		http.Error(w, `{"message":"Terjadi kesalahan internal pada server."}`, http.StatusInternalServerError)
+		return
+	}
+	
+	user.PasswordHash = string(hashedPassword)
+
+	if err := h.Store.UpdateUser(req.Email, user); err != nil {
+		log.Printf("ERROR: Gagal memperbarui password untuk email %s: %v", req.Email, err)
+		http.Error(w, `{"message":"Gagal memperbarui kata sandi."}`, http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("INFO: Pengguna %s berhasil mengubah kata sandi.", req.Email)
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(model.Response{Message: "Kata sandi berhasil diubah.", Success: true})
+}
+
 // StatusHandler adalah contoh halaman yang dilindungi.
 func StatusHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("INFO: Halaman terproteksi diakses dari IP: %s", r.RemoteAddr)

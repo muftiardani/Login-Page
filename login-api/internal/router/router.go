@@ -21,10 +21,11 @@ func NewRouter(authHandler *handler.AuthHandler) http.Handler {
 	protectedRoutes.Use(jwtAuthMiddleware)
 
 	protectedRoutes.HandleFunc("/status", handler.StatusHandler).Methods("GET")
+	protectedRoutes.HandleFunc("/user/password", authHandler.ChangePasswordHandler).Methods("PUT")
 
 	c := cors.New(cors.Options{
 		AllowedOrigins: []string{"http://localhost:5173"},
-		AllowedMethods: []string{"GET", "POST", "OPTIONS"},
+		AllowedMethods: []string{"GET", "POST", "OPTIONS", "PUT"},
 		AllowedHeaders: []string{"Content-Type", "Authorization"},
 	})
 

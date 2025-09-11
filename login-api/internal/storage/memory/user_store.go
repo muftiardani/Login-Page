@@ -34,3 +34,18 @@ func (s *MemoryUserStore) CreateUser(user model.User) error {
 	s.users[user.Email] = user
 	return nil
 }
+
+func (s *MemoryUserStore) UpdateUser(oldEmail string, user model.User) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	if _, exists := s.users[oldEmail]; !exists {
+		return errors.New("user to update not found")
+	}
+
+	delete(s.users, oldEmail)
+
+	s.users[user.Email] = user
+
+	return nil
+}

@@ -13,7 +13,6 @@ import (
 func NewJwtMiddleware(jwtKey []byte) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Mengambil token dari header Authorization
 			authHeader := r.Header.Get("Authorization")
 			if authHeader == "" {
 				log.Printf("PERINGATAN: Permintaan ke '%s' dari IP %s ditolak karena tidak ada token.", r.URL.Path, r.RemoteAddr)
@@ -21,7 +20,6 @@ func NewJwtMiddleware(jwtKey []byte) func(http.Handler) http.Handler {
 				return
 			}
 
-			// Memastikan format token adalah "Bearer <token>"
 			tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 			if tokenString == authHeader {
 				log.Printf("PERINGATAN: Format token salah untuk permintaan ke '%s' dari IP %s.", r.URL.Path, r.RemoteAddr)
@@ -29,7 +27,6 @@ func NewJwtMiddleware(jwtKey []byte) func(http.Handler) http.Handler {
 				return
 			}
 
-			// Memvalidasi token
 			claims := &model.Claims{}
 			token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 				return jwtKey, nil

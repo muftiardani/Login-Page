@@ -40,11 +40,11 @@ function togglePasswordVisibility() {
           autocomplete="current-password"
         />
         <span @click="togglePasswordVisibility" class="password-toggle-icon">
-          {{ isPasswordVisible ? '🙈' : '👁️' }}
+          {{ isPasswordVisible ? "🙈" : "👁️" }}
         </span>
       </div>
     </div>
-    <button type="submit" class="submit-button">Masuk</button>
+    <button type="submit" class="button button-primary">Masuk</button>
     <div class="toggle-view">
       <p>
         Belum punya akun?

@@ -6,7 +6,9 @@ import (
 	"login-api/internal/auth"
 	"login-api/internal/model"
 	"login-api/internal/storage"
+	"login-api/internal/validator"
 	"net/http"
+	"strings"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -34,7 +36,14 @@ func (h *AuthHandler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Mengamankan password dengan hashing
+	creds.Email = strings.TrimSpace(creds.Email)
+
+	if err := validator.ValidatePassword(creds.Password); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(model.Response{Message: err.Error(), Success: false})
+		return
+	}
+
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(creds.Password), bcrypt.DefaultCost)
 	if err != nil {
 		log.Printf("KRITIS: Gagal melakukan hash password untuk email %s: %v", creds.Email, err)
@@ -47,16 +56,15 @@ func (h *AuthHandler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		PasswordHash: string(hashedPassword),
 	}
 
-	// Mencoba membuat pengguna baru di database
 	if err := h.Store.CreateUser(newUser); err != nil {
 		log.Printf("PERINGATAN: Gagal mendaftarkan pengguna baru: %v", err)
-		w.WriteHeader(http.StatusConflict) // Status 409: Terjadi konflik
+		w.WriteHeader(http.StatusConflict)
 		json.NewEncoder(w).Encode(model.Response{Message: "Email ini sudah terdaftar. Silakan gunakan email lain.", Success: false})
 		return
 	}
 
 	log.Printf("INFO: Pengguna dengan email %s berhasil terdaftar.", creds.Email)
-	w.WriteHeader(http.StatusCreated) // Status 201: Berhasil dibuat
+	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(model.Response{Message: "Pendaftaran berhasil! Silakan masuk.", Success: true})
 }
 
@@ -71,16 +79,14 @@ func (h *AuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Memeriksa kredensial pengguna
 	user, ok := h.Store.GetUser(creds.Email)
 	if !ok || bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(creds.Password)) != nil {
 		log.Printf("PERINGATAN: Upaya login gagal untuk email '%s' dari IP: %s", creds.Email, r.RemoteAddr)
-		w.WriteHeader(http.StatusUnauthorized) // Status 401: Tidak terotorisasi
+		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(model.Response{Message: "Email atau kata sandi yang Anda masukkan salah.", Success: false})
 		return
 	}
 
-	// Jika berhasil, buatkan token JWT
 	tokenString, err := auth.GenerateJWT(creds.Email, h.JwtKey)
 	if err != nil {
 		log.Printf("KRITIS: Gagal membuat token JWT untuk %s: %v", creds.Email, err)
@@ -122,6 +128,18 @@ func (h *AuthHandler) ChangePasswordHandler(w http.ResponseWriter, r *http.Reque
 	if bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.OldPassword)) != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(model.Response{Message: "Kata sandi lama salah.", Success: false})
+		return
+	}
+	
+	if bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.NewPassword)) == nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(model.Response{Message: "Kata sandi baru tidak boleh sama dengan kata sandi lama.", Success: false})
+		return
+	}
+
+	if err := validator.ValidatePassword(req.NewPassword); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(model.Response{Message: err.Error(), Success: false})
 		return
 	}
 

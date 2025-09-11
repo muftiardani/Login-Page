@@ -95,7 +95,7 @@ function togglePasswordVisibility() {
           autocomplete="new-password"
         />
         <span @click="togglePasswordVisibility" class="password-toggle-icon">
-          {{ isPasswordVisible ? "🙈" : "👁️" }}
+          {{ isPasswordVisible ? "" : "" }}
         </span>
       </div>
       <div v-if="password.length > 0" class="password-strength-container">

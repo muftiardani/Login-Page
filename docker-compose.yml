@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  # Layanan Frontend (Vue.js)
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "5173:80" # Akses dari browser di port 5173
+
+  # Layanan Backend (Go API)
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    ports:
+      - "8080:8080"
+    environment:
+      # Sediakan environment variables di sini
+      SERVER_ADDRESS: ":8080"
+      JWT_SECRET_KEY: "kunci_rahasia_super_aman_untuk_docker"
+      DATABASE_URL: "postgres://postgres:arda123@db:5432/LoginDB?sslmode=disable"
+    depends_on:
+      - db
+
+  # Layanan Database (PostgreSQL)
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: arda123
+      POSTGRES_DB: LoginDB
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

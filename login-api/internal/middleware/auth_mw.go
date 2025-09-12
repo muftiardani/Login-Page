@@ -4,29 +4,26 @@ import (
 	"log"
 	"login-api/internal/model"
 	"net/http"
-	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// NewJwtMiddleware membuat lapisan pelindung (middleware) untuk memeriksa token JWT.
+// NewJwtMiddleware membuat lapisan pelindung untuk memeriksa token JWT dari cookie.
 func NewJwtMiddleware(jwtKey []byte) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			authHeader := r.Header.Get("Authorization")
-			if authHeader == "" {
-				log.Printf("PERINGATAN: Permintaan ke '%s' dari IP %s ditolak karena tidak ada token.", r.URL.Path, r.RemoteAddr)
-				http.Error(w, `{"message":"Token otentikasi tidak ditemukan. Harap sertakan di header Authorization."}`, http.StatusUnauthorized)
+			c, err := r.Cookie("access_token")
+			if err != nil {
+				if err == http.ErrNoCookie {
+					log.Printf("PERINGATAN: Permintaan ke '%s' dari IP %s ditolak karena tidak ada token.", r.URL.Path, r.RemoteAddr)
+					http.Error(w, `{"message":"Token otentikasi tidak ditemukan."}`, http.StatusUnauthorized)
+					return
+				}
+				http.Error(w, `{"message":"Permintaan tidak valid."}`, http.StatusBadRequest)
 				return
 			}
 
-			tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-			if tokenString == authHeader {
-				log.Printf("PERINGATAN: Format token salah untuk permintaan ke '%s' dari IP %s.", r.URL.Path, r.RemoteAddr)
-				http.Error(w, `{"message":"Format token tidak valid. Pastikan menggunakan format 'Bearer <token>'."}`, http.StatusUnauthorized)
-				return
-			}
-
+			tokenString := c.Value
 			claims := &model.Claims{}
 			token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 				return jwtKey, nil

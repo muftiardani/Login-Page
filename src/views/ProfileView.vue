@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed } from "vue";
-import { useAuthStore } from "@/stores/auth";
-import * as api from "@/api/auth";
+import { useAuthStore } from "@/stores/auth.js";
+import * as api from "@/api/auth.js";
 import router from "@/router";
 
 const authStore = useAuthStore();
@@ -95,7 +95,8 @@ async function handleChangePassword() {
       oldPassword: oldPassword.value,
       newPassword: newPassword.value,
     };
-    const result = await api.changePassword(authStore.token, payload);
+    const result = await api.changePassword(payload);
+    
     showNotification(result.message, "success");
     oldPassword.value = "";
     newPassword.value = "";
@@ -136,7 +137,7 @@ function goBack() {
         <input
           type="password"
           id="old-password"
-          v-model="oldPassword"
+          v-model="oldPassword" 
           required
           autocomplete="current-password"
         />

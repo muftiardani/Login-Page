@@ -1,0 +1,14 @@
+# Stage 1: Build the Go application
+FROM golang:1.20-alpine AS build
+WORKDIR /app
+COPY login-api/go.mod login-api/go.sum ./
+RUN go mod download
+COPY login-api/ ./
+RUN CGO_ENABLED=0 GOOS=linux go build -o /main ./cmd/api
+
+# Stage 2: Create a minimal production image
+FROM alpine:latest
+WORKDIR /
+COPY --from=build /main /main
+EXPOSE 8080
+CMD ["/main"]

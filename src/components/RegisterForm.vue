@@ -1,13 +1,19 @@
 <script setup>
 import { ref, computed } from "vue";
+import { useAuthStore } from "@/stores/auth.js";
 
+// Mendefinisikan event 'submit-register' yang akan dikirim ke komponen induk
 const emit = defineEmits(["submit-register"]);
+const authStore = useAuthStore();
 
+// State reaktif untuk setiap input form
 const email = ref("");
 const password = ref("");
 const confirmPassword = ref("");
 const isPasswordVisible = ref(false);
+const passwordValidationError = ref(""); // Menyimpan pesan error validasi
 
+// Properti komputasi untuk mengukur kekuatan kata sandi secara real-time
 const passwordStrength = computed(() => {
   const p = password.value;
   if (p.length === 0) return { score: 0, text: "", color: "#ccc", width: "0%" };
@@ -58,7 +64,28 @@ const passwordStrength = computed(() => {
   return { score, text, color, width: `${score}%` };
 });
 
+function validatePassword(password) {
+  if (password.length < 8)
+    return "Kata sandi harus memiliki minimal 8 karakter.";
+  if (!/[a-z]/.test(password))
+    return "Kata sandi harus mengandung setidaknya satu huruf kecil.";
+  if (!/[A-Z]/.test(password))
+    return "Kata sandi harus mengandung setidaknya satu huruf besar.";
+  if (!/[0-9]/.test(password))
+    return "Kata sandi harus mengandung setidaknya satu angka.";
+  if (!/[^a-zA-Z0-9]/.test(password))
+    return "Kata sandi harus mengandung setidaknya satu karakter spesial.";
+  return "";
+}
+
+// Fungsi yang dijalankan saat form di-submit
 function handleSubmit() {
+  passwordValidationError.value = validatePassword(password.value);
+  if (passwordValidationError.value) {
+    return;
+  }
+
+  // Kirimkan event ke komponen induk
   emit("submit-register", {
     email: email.value,
     password: password.value,
@@ -66,6 +93,7 @@ function handleSubmit() {
   });
 }
 
+// Fungsi untuk mengubah visibilitas kata sandi
 function togglePasswordVisibility() {
   isPasswordVisible.value = !isPasswordVisible.value;
 }
@@ -74,6 +102,7 @@ function togglePasswordVisibility() {
 <template>
   <form @submit.prevent="handleSubmit" class="auth-form">
     <h2>Buat Akun Baru</h2>
+
     <div class="input-group">
       <label for="register-email">Email</label>
       <input
@@ -84,6 +113,7 @@ function togglePasswordVisibility() {
         autocomplete="email"
       />
     </div>
+
     <div class="input-group">
       <label for="register-password">Kata Sandi</label>
       <div class="password-wrapper">
@@ -98,6 +128,7 @@ function togglePasswordVisibility() {
           {{ isPasswordVisible ? "" : "" }}
         </span>
       </div>
+
       <div v-if="password.length > 0" class="password-strength-container">
         <div class="strength-bar-background">
           <div
@@ -115,7 +146,12 @@ function togglePasswordVisibility() {
           Kata Sandi {{ passwordStrength.text }}
         </div>
       </div>
+
+      <div v-if="passwordValidationError" class="validation-error">
+        {{ passwordValidationError }}
+      </div>
     </div>
+
     <div class="input-group">
       <label for="register-confirm-password">Konfirmasi Kata Sandi</label>
       <input
@@ -126,7 +162,15 @@ function togglePasswordVisibility() {
         autocomplete="new-password"
       />
     </div>
-    <button type="submit" class="button button-primary">Daftar Sekarang</button>
+
+    <button
+      type="submit"
+      class="button button-primary"
+      :disabled="authStore.isLoading"
+    >
+      {{ authStore.isLoading ? "Memproses..." : "Daftar Sekarang" }}
+    </button>
+
     <div class="toggle-view">
       <p>
         Sudah punya akun?
@@ -157,5 +201,11 @@ function togglePasswordVisibility() {
 .password-strength-text {
   font-size: 0.85rem;
   font-weight: 600;
+}
+.validation-error {
+  color: var(--error-color);
+  font-size: 0.85rem;
+  margin-top: 8px;
+  text-align: left;
 }
 </style>

@@ -1,7 +1,9 @@
 <script setup>
 import { ref } from "vue";
+import { useAuthStore } from "@/stores/auth.js";
 
 const emit = defineEmits(["submit-login"]);
+const authStore = useAuthStore();
 
 const email = ref("");
 const password = ref("");
@@ -44,7 +46,9 @@ function togglePasswordVisibility() {
         </span>
       </div>
     </div>
-    <button type="submit" class="button button-primary">Masuk</button>
+    <button type="submit" class="button button-primary" :disabled="authStore.isLoading">
+      {{ authStore.isLoading ? 'Memproses...' : 'Masuk' }}
+    </button>
     <div class="toggle-view">
       <p>
         Belum punya akun?

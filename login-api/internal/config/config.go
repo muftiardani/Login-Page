@@ -1,7 +1,10 @@
 package config
 
 import (
+	"log"
 	"os"
+
+	"github.com/joho/godotenv"
 )
 
 type Config struct {
@@ -11,10 +14,18 @@ type Config struct {
 }
 
 func New() *Config {
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("PERINGATAN: Tidak dapat memuat file .env")
+	}
+
+	jwtKey := getEnvOrPanic("JWT_SECRET_KEY")
+	dbURL := getEnvOrPanic("DATABASE_URL")
+
 	return &Config{
 		ServerAddress: getEnv("SERVER_ADDRESS", ":8080"),
-		JWTSecretKey:  getEnv("JWT_SECRET_KEY", "kunci_rahasia_super_aman_saya"),
-		DatabaseURL:   getEnv("DATABASE_URL", "postgres://postgres:arda123@localhost:5432/LoginDB"),
+		JWTSecretKey:  jwtKey,
+		DatabaseURL:   dbURL,
 	}
 }
 
@@ -23,4 +34,12 @@ func getEnv(key, fallback string) string {
 		return value
 	}
 	return fallback
+}
+
+func getEnvOrPanic(key string) string {
+	value, exists := os.LookupEnv(key)
+	if !exists {
+		log.Fatalf("FATAL: Environment variable %s tidak diatur.", key)
+	}
+	return value
 }

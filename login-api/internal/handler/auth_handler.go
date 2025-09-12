@@ -9,7 +9,9 @@ import (
 	"login-api/internal/validator"
 	"net/http"
 	"strings"
+	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -68,7 +70,7 @@ func (h *AuthHandler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(model.Response{Message: "Pendaftaran berhasil! Silakan masuk.", Success: true})
 }
 
-// LoginHandler menangani permintaan login dari pengguna.
+// LoginHandler menangani permintaan login dan mengirimkan token melalui HttpOnly cookie.
 func (h *AuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("INFO: Menerima permintaan login dari alamat IP: %s", r.RemoteAddr)
 	w.Header().Set("Content-Type", "application/json")
@@ -87,20 +89,113 @@ func (h *AuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tokenString, err := auth.GenerateJWT(creds.Email, h.JwtKey)
+	accessToken, refreshToken, err := auth.GenerateTokens(creds.Email, h.JwtKey)
 	if err != nil {
 		log.Printf("KRITIS: Gagal membuat token JWT untuk %s: %v", creds.Email, err)
 		http.Error(w, `{"message":"Gagal membuat token autentikasi."}`, http.StatusInternalServerError)
 		return
 	}
 
+	// Set HttpOnly cookie untuk access token
+	http.SetCookie(w, &http.Cookie{
+		Name:     "access_token",
+		Value:    accessToken,
+		Expires:  time.Now().Add(15 * time.Minute),
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
+		Path:     "/",
+	})
+
+	// Set HttpOnly cookie untuk refresh token
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    refreshToken,
+		Expires:  time.Now().Add(24 * 7 * time.Hour),
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
+		Path:     "/api/refresh",
+	})
+
 	log.Printf("INFO: Pengguna %s berhasil masuk.", creds.Email)
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(model.Response{
 		Message: "Login berhasil!",
-		Token:   tokenString,
 		Success: true,
 	})
+}
+
+// RefreshTokenHandler memvalidasi refresh token dan memberikan access token baru.
+func (h *AuthHandler) RefreshTokenHandler(w http.ResponseWriter, r *http.Request) {
+	c, err := r.Cookie("refresh_token")
+	if err != nil {
+		if err == http.ErrNoCookie {
+			http.Error(w, `{"message":"Refresh token tidak ditemukan."}`, http.StatusUnauthorized)
+			return
+		}
+		http.Error(w, `{"message":"Permintaan tidak valid."}`, http.StatusBadRequest)
+		return
+	}
+
+	tokenStr := c.Value
+	claims := &model.Claims{}
+	token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
+		return h.JwtKey, nil
+	})
+
+	if err != nil || !token.Valid {
+		http.Error(w, `{"message":"Refresh token tidak valid atau kedaluwarsa."}`, http.StatusUnauthorized)
+		return
+	}
+
+	// Buat access token baru
+	expirationTime := time.Now().Add(15 * time.Minute)
+	claims.ExpiresAt = jwt.NewNumericDate(expirationTime)
+	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	accessTokenString, err := accessToken.SignedString(h.JwtKey)
+	if err != nil {
+		http.Error(w, `{"message":"Gagal membuat token baru."}`, http.StatusInternalServerError)
+		return
+	}
+
+	// Set cookie access token yang baru
+	http.SetCookie(w, &http.Cookie{
+		Name:     "access_token",
+		Value:    accessTokenString,
+		Expires:  expirationTime,
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
+		Path:     "/",
+	})
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(model.Response{Message: "Token berhasil diperbarui.", Success: true})
+}
+
+// LogoutHandler menghapus cookie otentikasi.
+func (h *AuthHandler) LogoutHandler(w http.ResponseWriter, r *http.Request) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     "access_token",
+		Value:    "",
+		Expires:  time.Now().Add(-1 * time.Hour),
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
+		Path:     "/",
+	})
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    "",
+		Expires:  time.Now().Add(-1 * time.Hour),
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
+		Path:     "/api/refresh",
+	})
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(model.Response{Message: "Logout berhasil.", Success: true})
 }
 
 // ChangePasswordHandler menangani permintaan perubahan password.

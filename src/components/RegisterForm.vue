@@ -1,91 +1,28 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref } from "vue";
 import { useAuthStore } from "@/stores/auth.js";
+import { usePasswordValidator } from "@/composables/usePasswordValidator.js";
 
-// Mendefinisikan event 'submit-register' yang akan dikirim ke komponen induk
 const emit = defineEmits(["submit-register"]);
 const authStore = useAuthStore();
 
-// State reaktif untuk setiap input form
 const email = ref("");
-const password = ref("");
 const confirmPassword = ref("");
 const isPasswordVisible = ref(false);
-const passwordValidationError = ref(""); // Menyimpan pesan error validasi
 
-// Properti komputasi untuk mengukur kekuatan kata sandi secara real-time
-const passwordStrength = computed(() => {
-  const p = password.value;
-  if (p.length === 0) return { score: 0, text: "", color: "#ccc", width: "0%" };
+const { 
+  password, 
+  passwordStrength, 
+  validatePassword 
+} = usePasswordValidator();
 
-  let score = 0;
-  let checks = 0;
+const passwordValidationError = ref("");
 
-  if (p.length >= 8) {
-    score += 20;
-    checks++;
-  }
-  if (/[a-z]/.test(p)) {
-    score += 20;
-    checks++;
-  }
-  if (/[A-Z]/.test(p)) {
-    score += 20;
-    checks++;
-  }
-  if (/[0-9]/.test(p)) {
-    score += 20;
-    checks++;
-  }
-  if (/[^a-zA-Z0-9]/.test(p)) {
-    score += 20;
-    checks++;
-  }
-
-  score = Math.min(score, 100);
-
-  let text = "Sangat Lemah";
-  let color = "#dc3545";
-
-  if (checks === 5) {
-    text = "Sangat Kuat";
-    color = "#28a745";
-  } else if (checks === 4) {
-    text = "Kuat";
-    color = "#8fce00";
-  } else if (checks === 3) {
-    text = "Kurang Kuat";
-    color = "#ffc107";
-  } else if (checks === 2) {
-    text = "Lemah";
-    color = "#fd7e14";
-  }
-
-  return { score, text, color, width: `${score}%` };
-});
-
-function validatePassword(password) {
-  if (password.length < 8)
-    return "Kata sandi harus memiliki minimal 8 karakter.";
-  if (!/[a-z]/.test(password))
-    return "Kata sandi harus mengandung setidaknya satu huruf kecil.";
-  if (!/[A-Z]/.test(password))
-    return "Kata sandi harus mengandung setidaknya satu huruf besar.";
-  if (!/[0-9]/.test(password))
-    return "Kata sandi harus mengandung setidaknya satu angka.";
-  if (!/[^a-zA-Z0-9]/.test(password))
-    return "Kata sandi harus mengandung setidaknya satu karakter spesial.";
-  return "";
-}
-
-// Fungsi yang dijalankan saat form di-submit
 function handleSubmit() {
   passwordValidationError.value = validatePassword(password.value);
   if (passwordValidationError.value) {
     return;
   }
-
-  // Kirimkan event ke komponen induk
   emit("submit-register", {
     email: email.value,
     password: password.value,
@@ -93,7 +30,6 @@ function handleSubmit() {
   });
 }
 
-// Fungsi untuk mengubah visibilitas kata sandi
 function togglePasswordVisibility() {
   isPasswordVisible.value = !isPasswordVisible.value;
 }
@@ -174,7 +110,7 @@ function togglePasswordVisibility() {
     <div class="toggle-view">
       <p>
         Sudah punya akun?
-        <router-link to="/login">Masuk di sini</router-link>
+        <router-link to="/auth/login">Masuk di sini</router-link>
       </p>
     </div>
   </form>

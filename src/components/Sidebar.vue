@@ -35,5 +35,54 @@ const authStore = useAuthStore();
 </template>
 
 <style scoped>
-/* Style untuk sidebar */
+.sidebar {
+  width: 260px;
+  background: var(--primary-color);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+  flex-shrink: 0;
+}
+.logo {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+.navigation {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.9rem 1rem;
+  border-radius: 8px;
+  color: #a7c0cd;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-family);
+  font-size: 1rem;
+}
+.nav-item:hover,
+.router-link-exact-active {
+  background-color: var(--secondary-color);
+  color: white;
+}
+.logout-section {
+  margin-top: auto;
+}
+.logout-button:hover {
+  background-color: #c82333;
+  color: white;
+}
 </style>

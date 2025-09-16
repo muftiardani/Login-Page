@@ -7,7 +7,7 @@ services:
       context: .
       dockerfile: Dockerfile.frontend
     ports:
-      - "5173:80" # Akses dari browser di port 5173
+      - "5173:80"
 
   # Layanan Backend (Go API)
   backend:
@@ -17,7 +17,6 @@ services:
     ports:
       - "8080:8080"
     environment:
-      # Sediakan environment variables di sini
       SERVER_ADDRESS: ":8080"
       JWT_SECRET_KEY: "kunci_rahasia_super_aman_untuk_docker"
       DATABASE_URL: "postgres://postgres:arda123@db:5432/LoginDB?sslmode=disable"

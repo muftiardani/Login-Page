@@ -1,10 +1,10 @@
 package config
 
 import (
-	"log"
 	"os"
 
 	"github.com/joho/godotenv"
+	"github.com/rs/zerolog/log"
 )
 
 type Config struct {
@@ -16,7 +16,7 @@ type Config struct {
 func New() *Config {
 	err := godotenv.Load()
 	if err != nil {
-		log.Println("PERINGATAN: Tidak dapat memuat file .env")
+		log.Warn().Msg("Tidak dapat memuat file .env")
 	}
 
 	jwtKey := getEnvOrPanic("JWT_SECRET_KEY")
@@ -39,7 +39,7 @@ func getEnv(key, fallback string) string {
 func getEnvOrPanic(key string) string {
 	value, exists := os.LookupEnv(key)
 	if !exists {
-		log.Fatalf("FATAL: Environment variable %s tidak diatur.", key)
+		log.Fatal().Msgf("FATAL: Environment variable %s tidak diatur.", key)
 	}
 	return value
 }

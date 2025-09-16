@@ -1,37 +1,59 @@
 import { createRouter, createWebHistory } from "vue-router";
 import { useAuthStore } from "@/stores/auth.js";
+
+import MainLayout from "@/layouts/MainLayout.vue";
 import AuthView from "@/views/AuthView.vue";
-import StatusView from "@/views/StatusView.vue";
-import ProfileView from "@/views/ProfileView.vue";
 
 const routes = [
   {
-    path: "/login",
+    path: "/auth/login",
     name: "Login",
     component: AuthView,
     meta: { requiresGuest: true },
   },
   {
-    path: "/register",
+    path: "/auth/register",
     name: "Register",
     component: AuthView,
     meta: { requiresGuest: true },
   },
   {
     path: "/",
-    name: "Status",
-    component: StatusView,
+    component: MainLayout,
     meta: { requiresAuth: true },
-  },
-  {
-    path: "/profile",
-    name: "Profile",
-    component: ProfileView,
-    meta: { requiresAuth: true },
+    children: [
+      {
+        path: "",
+        name: "Dashboard",
+        component: () => import("@/views/DashboardView.vue"),
+        meta: {
+          title: "Dashboard",
+          subtitle: "Selamat datang kembali!",
+        },
+      },
+      {
+        path: "payments",
+        name: "Payments",
+        component: () => import("@/views/PaymentView.vue"),
+        meta: {
+          title: "Tabel Pembayaran",
+          subtitle: "Berikut adalah daftar semua transaksi pembayaran.",
+        },
+      },
+      {
+        path: "profile",
+        name: "Profile",
+        component: () => import("@/views/ProfileView.vue"),
+        meta: {
+          title: "Profil Pengguna",
+          subtitle: "Ubah kata sandi dan kelola akun Anda.",
+        },
+      },
+    ],
   },
   {
     path: "/:pathMatch(.*)*",
-    redirect: "/",
+    redirect: { name: "Dashboard" },
   },
 ];
 
@@ -45,9 +67,9 @@ router.beforeEach((to, from, next) => {
   const isLoggedIn = authStore.isAuthenticated;
 
   if (to.meta.requiresAuth && !isLoggedIn) {
-    next("/login");
+    next({ name: "Login" });
   } else if (to.meta.requiresGuest && isLoggedIn) {
-    next("/");
+    next({ name: "Dashboard" });
   } else {
     next();
   }

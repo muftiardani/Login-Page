@@ -46,13 +46,17 @@ function togglePasswordVisibility() {
         </span>
       </div>
     </div>
-    <button type="submit" class="button button-primary" :disabled="authStore.isLoading">
-      {{ authStore.isLoading ? 'Memproses...' : 'Masuk' }}
+    <button
+      type="submit"
+      class="button button-primary"
+      :disabled="authStore.isLoading"
+    >
+      {{ authStore.isLoading ? "Memproses..." : "Masuk" }}
     </button>
     <div class="toggle-view">
       <p>
         Belum punya akun?
-        <router-link to="/register">Buat akun baru</router-link>
+        <router-link :to="{ name: 'Register' }">Buat akun baru</router-link>
       </p>
     </div>
   </form>

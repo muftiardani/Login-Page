@@ -1,6 +1,5 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
-import router from "@/router";
 import * as api from "@/api/auth.js";
 import { useToast } from "vue-toastification";
 
@@ -17,7 +16,8 @@ export const useAuthStore = defineStore("auth", () => {
       user.value = credentials.email;
       isAuthenticated.value = true;
       localStorage.setItem("email", credentials.email);
-      await router.push("/");
+      const router = (await import("@/router")).default;
+      await router.push({ name: "Dashboard" });
       toast.success(data.message);
       return { success: true };
     } catch (error) {
@@ -50,7 +50,8 @@ export const useAuthStore = defineStore("auth", () => {
     user.value = null;
     isAuthenticated.value = false;
     localStorage.removeItem("email");
-    router.push("/login");
+
+    window.location.href = "/auth/login";
   }
 
   return {

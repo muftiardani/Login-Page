@@ -2,13 +2,13 @@
 import { ref, computed } from "vue";
 import { useAuthStore } from "@/stores/auth.js";
 import * as api from "@/api/auth.js";
-import router from "@/router";
+import { useToast } from "vue-toastification";
 
 const authStore = useAuthStore();
+const toast = useToast();
 const oldPassword = ref("");
 const newPassword = ref("");
 const confirmNewPassword = ref("");
-const notification = ref({ message: "", type: "", show: false });
 
 const passwordStrength = computed(() => {
   const p = newPassword.value;
@@ -70,23 +70,20 @@ function validatePassword(password) {
 
 async function handleChangePassword() {
   if (!oldPassword.value || !newPassword.value || !confirmNewPassword.value) {
-    showNotification("Semua kolom harus diisi", "error");
+    toast.error("Semua kolom harus diisi");
     return;
   }
   if (newPassword.value !== confirmNewPassword.value) {
-    showNotification("Konfirmasi kata sandi baru tidak cocok.", "error");
+    toast.error("Konfirmasi kata sandi baru tidak cocok.");
     return;
   }
   if (oldPassword.value === newPassword.value) {
-    showNotification(
-      "Kata sandi baru tidak boleh sama dengan kata sandi lama.",
-      "error"
-    );
+    toast.error("Kata sandi baru tidak boleh sama dengan kata sandi lama.");
     return;
   }
   const passwordError = validatePassword(newPassword.value);
   if (passwordError) {
-    showNotification(passwordError, "error");
+    toast.error(passwordError);
     return;
   }
   try {
@@ -96,48 +93,25 @@ async function handleChangePassword() {
       newPassword: newPassword.value,
     };
     const result = await api.changePassword(payload);
-    
-    showNotification(result.message, "success");
+    toast.success(result.message);
     oldPassword.value = "";
     newPassword.value = "";
     confirmNewPassword.value = "";
   } catch (error) {
-    showNotification(error.message, "error");
+    toast.error(error.message);
   }
-}
-
-function showNotification(message, type) {
-  notification.value = { message, type, show: true };
-  setTimeout(() => {
-    notification.value.show = false;
-  }, 5000);
-}
-
-function goBack() {
-  router.push("/");
 }
 </script>
 
 <template>
-  <div class="content-container">
-    <Transition name="slide-fade" mode="out-in">
-      <div
-        v-if="notification.show"
-        :key="notification.message"
-        :class="['notification', notification.type]"
-      >
-        {{ notification.message }}
-      </div>
-    </Transition>
-
-    <h2>Ubah Kata Sandi</h2>
+  <div class="card profile-card">
     <form @submit.prevent="handleChangePassword" class="auth-form">
       <div class="input-group">
         <label for="old-password">Kata Sandi Lama</label>
         <input
           type="password"
           id="old-password"
-          v-model="oldPassword" 
+          v-model="oldPassword"
           required
           autocomplete="current-password"
         />
@@ -182,22 +156,20 @@ function goBack() {
       <button type="submit" class="button button-primary">
         Simpan Perubahan
       </button>
-      <button type="button" @click="goBack" class="button button-secondary">
-        Kembali
-      </button>
     </form>
   </div>
 </template>
 
 <style scoped>
-.slide-fade-enter-active,
-.slide-fade-leave-active {
-  transition: all 0.5s ease;
+.card {
+  background-color: var(--card-background);
+  border-radius: var(--border-radius);
+  padding: 2rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--border-color);
 }
-.slide-fade-enter-from,
-.slide-fade-leave-to {
-  transform: translateY(-20px);
-  opacity: 0;
+.profile-card {
+  max-width: 700px;
 }
 .password-strength-container {
   margin-top: 10px;

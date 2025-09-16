@@ -36,12 +36,17 @@ func main() {
 	log.Info().Msg("Database berhasil terhubung!")
 
 	userStore := postgres.NewPostgresUserStore(dbpool)
+	paymentStore := postgres.NewPostgresPaymentStore(dbpool)
+
 	jwtKey := []byte(cfg.JWTSecretKey)
 	addr := cfg.ServerAddress
-	authHandler := handler.NewAuthHandler(userStore, jwtKey)
-	r := router.NewRouter(authHandler)
 
-	// Implementasi Graceful Shutdown
+	authHandler := handler.NewAuthHandler(userStore, jwtKey)
+	paymentHandler := handler.NewPaymentHandler(paymentStore)
+	dashboardHandler := handler.NewDashboardHandler(paymentStore)
+
+	r := router.NewRouter(authHandler, paymentHandler, dashboardHandler)
+
 	srv := &http.Server{
 		Addr:    addr,
 		Handler: r,

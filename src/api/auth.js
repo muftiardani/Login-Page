@@ -8,13 +8,12 @@ async function handleResponse(response) {
     return data;
 }
 
-// Tambahkan interceptor untuk menangani token refresh
 async function fetchWithAuth(url, options = {}) {
-    let response = await fetch(url, { ...options, credentials: 'include' });
-
+    const fetchOptions = { ...options, credentials: 'include' };
+    let response = await fetch(url, fetchOptions);
     if (response.status === 401) {
         await fetch(`${API_BASE_URL}/refresh`, { method: 'POST', credentials: 'include' });
-        response = await fetch(url, { ...options, credentials: 'include' });
+        response = await fetch(url, fetchOptions);
     }
     return response;
 }
@@ -38,11 +37,6 @@ export async function register(credentials) {
     return handleResponse(response);
 }
 
-export async function getStatus() {
-    const response = await fetchWithAuth(`${API_BASE_URL}/status`);
-    return handleResponse(response);
-}
-
 export async function changePassword(payload) {
     const response = await fetchWithAuth(`${API_BASE_URL}/user/password`, {
         method: "PUT",
@@ -57,4 +51,19 @@ export async function logout() {
         method: "POST",
         credentials: 'include',
     });
+}
+
+export async function getPayments() {
+    const response = await fetchWithAuth(`${API_BASE_URL}/payments`);
+    return handleResponse(response);
+}
+
+export async function getDashboardSummary() {
+    const response = await fetchWithAuth(`${API_BASE_URL}/dashboard/summary`);
+    return handleResponse(response);
+}
+
+export async function getChartData() {
+    const response = await fetchWithAuth(`${API_BASE_URL}/dashboard/chart`);
+    return handleResponse(response);
 }

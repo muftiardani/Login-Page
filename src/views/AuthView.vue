@@ -11,12 +11,13 @@ const router = useRouter();
 const authStore = useAuthStore();
 const toast = useToast();
 
-const currentView = ref(route.path);
+const currentPath = ref(route.path);
 
+// Mengawasi perubahan path untuk menampilkan komponen yang benar
 watch(
   () => route.path,
   (newPath) => {
-    currentView.value = newPath;
+    currentPath.value = newPath;
   }
 );
 
@@ -32,26 +33,28 @@ async function handleRegister(credentials) {
   const result = await authStore.handleRegister(credentials);
   if (result.success) {
     setTimeout(() => {
-      router.push("/login");
+      router.push({ name: "Login" });
     }, 2000);
   }
 }
 </script>
 
 <template>
-  <div class="content-container">
-    <Transition name="fade" mode="out-in">
-      <div :key="currentView">
+  <div class="auth-container">
+    <div class="content-container">
+      <Transition name="fade" mode="out-in">
         <LoginForm
-          v-if="currentView === '/login'"
+          v-if="currentPath === '/auth/login'"
           @submit-login="handleLogin"
+          key="login"
         />
         <RegisterForm
-          v-else-if="currentView === '/register'"
+          v-else-if="currentPath === '/auth/register'"
           @submit-register="handleRegister"
+          key="register"
         />
-      </div>
-    </Transition>
+      </Transition>
+    </div>
   </div>
 </template>
 

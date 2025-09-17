@@ -6,6 +6,7 @@ import (
 	"login-api/internal/config"
 	"login-api/internal/handler"
 	"login-api/internal/router"
+	"login-api/internal/service"
 	"login-api/internal/storage/postgres"
 	"net/http"
 	"os"
@@ -35,16 +36,22 @@ func main() {
 	}
 	log.Info().Msg("Database berhasil terhubung!")
 
+	// Inisialisasi lapisan penyimpanan (storage)
 	userStore := postgres.NewPostgresUserStore(dbpool)
 	paymentStore := postgres.NewPostgresPaymentStore(dbpool)
 
 	jwtKey := []byte(cfg.JWTSecretKey)
 	addr := cfg.ServerAddress
 
-	authHandler := handler.NewAuthHandler(userStore, jwtKey)
+	// Inisialisasi lapisan layanan (service)
+	authService := service.NewAuthService(userStore, jwtKey)
+
+	// Suntikkan service ke dalam handler, bukan store langsung
+	authHandler := handler.NewAuthHandler(authService, jwtKey)
 	paymentHandler := handler.NewPaymentHandler(paymentStore)
 	dashboardHandler := handler.NewDashboardHandler(paymentStore)
 
+	// Buat router dengan handler yang sudah diinisialisasi
 	r := router.NewRouter(authHandler, paymentHandler, dashboardHandler)
 
 	srv := &http.Server{
@@ -52,6 +59,7 @@ func main() {
 		Handler: r,
 	}
 
+	// Jalankan server dalam goroutine agar tidak memblokir
 	go func() {
 		log.Info().Msgf("Server Go API dengan JWT berjalan di http://localhost%s", addr)
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
@@ -59,6 +67,7 @@ func main() {
 		}
 	}()
 
+	// Menunggu sinyal interupsi untuk mematikan server secara graceful
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit

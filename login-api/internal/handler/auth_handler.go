@@ -2,34 +2,34 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
-	"login-api/internal/auth"
 	"login-api/internal/model"
-	"login-api/internal/storage"
+	"login-api/internal/service"
 	"login-api/internal/validator"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
+// AuthHandler menangani permintaan HTTP terkait autentikasi.
 type AuthHandler struct {
-	Store  storage.UserStore
-	JwtKey []byte
+	AuthSvc *service.AuthService
+	JwtKey  []byte
 }
 
-func NewAuthHandler(store storage.UserStore, jwtKey []byte) *AuthHandler {
+// NewAuthHandler membuat instance AuthHandler baru dengan AuthSvc yang disuntikkan.
+func NewAuthHandler(authSvc *service.AuthService, jwtKey []byte) *AuthHandler {
 	return &AuthHandler{
-		Store:  store,
-		JwtKey: jwtKey,
+		AuthSvc: authSvc,
+		JwtKey:  jwtKey,
 	}
 }
 
 // RegisterHandler menangani permintaan pendaftaran pengguna baru.
 func (h *AuthHandler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
-	log.Printf("INFO: Menerima permintaan pendaftaran dari alamat IP: %s", r.RemoteAddr)
 	w.Header().Set("Content-Type", "application/json")
 
 	var creds model.Credentials
@@ -38,41 +38,26 @@ func (h *AuthHandler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	creds.Email = strings.TrimSpace(creds.Email)
-
-	if err := validator.ValidatePassword(creds.Password); err != nil {
+	err := h.AuthSvc.RegisterUser(creds)
+	if err != nil {
+		// Menentukan kode status berdasarkan jenis error dari service
+		if errors.Is(err, service.ErrEmailExists) {
+			w.WriteHeader(http.StatusConflict)
+			json.NewEncoder(w).Encode(model.Response{Message: err.Error(), Success: false})
+			return
+		}
+		// Untuk error validasi lainnya
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(model.Response{Message: err.Error(), Success: false})
 		return
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(creds.Password), bcrypt.DefaultCost)
-	if err != nil {
-		log.Printf("KRITIS: Gagal melakukan hash password untuk email %s: %v", creds.Email, err)
-		http.Error(w, `{"message":"Terjadi kesalahan internal pada server."}`, http.StatusInternalServerError)
-		return
-	}
-
-	newUser := model.User{
-		Email:        creds.Email,
-		PasswordHash: string(hashedPassword),
-	}
-
-	if err := h.Store.CreateUser(newUser); err != nil {
-		log.Printf("PERINGATAN: Gagal mendaftarkan pengguna baru: %v", err)
-		w.WriteHeader(http.StatusConflict)
-		json.NewEncoder(w).Encode(model.Response{Message: "Email ini sudah terdaftar. Silakan gunakan email lain.", Success: false})
-		return
-	}
-
-	log.Printf("INFO: Pengguna dengan email %s berhasil terdaftar.", creds.Email)
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(model.Response{Message: "Pendaftaran berhasil! Silakan masuk.", Success: true})
 }
 
 // LoginHandler menangani permintaan login dan mengirimkan token melalui HttpOnly cookie.
 func (h *AuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
-	log.Printf("INFO: Menerima permintaan login dari alamat IP: %s", r.RemoteAddr)
 	w.Header().Set("Content-Type", "application/json")
 
 	var creds model.Credentials
@@ -81,18 +66,15 @@ func (h *AuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, ok := h.Store.GetUser(creds.Email)
-	if !ok || bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(creds.Password)) != nil {
-		log.Printf("PERINGATAN: Upaya login gagal untuk email '%s' dari IP: %s", creds.Email, r.RemoteAddr)
-		w.WriteHeader(http.StatusUnauthorized)
-		json.NewEncoder(w).Encode(model.Response{Message: "Email atau kata sandi yang Anda masukkan salah.", Success: false})
-		return
-	}
-
-	accessToken, refreshToken, err := auth.GenerateTokens(creds.Email, h.JwtKey)
+	accessToken, refreshToken, err := h.AuthSvc.LoginUser(creds)
 	if err != nil {
-		log.Printf("KRITIS: Gagal membuat token JWT untuk %s: %v", creds.Email, err)
-		http.Error(w, `{"message":"Gagal membuat token autentikasi."}`, http.StatusInternalServerError)
+		if errors.Is(err, validator.ErrInvalidCredentials) {
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(model.Response{Message: err.Error(), Success: false})
+			return
+		}
+		log.Printf("KRITIS: Gagal membuat token JWT: %v", err)
+		http.Error(w, `{"message":"Terjadi kesalahan internal pada server."}`, http.StatusInternalServerError)
 		return
 	}
 
@@ -118,7 +100,6 @@ func (h *AuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		Path:     "/api/refresh",
 	})
 
-	log.Printf("INFO: Pengguna %s berhasil masuk.", creds.Email)
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(model.Response{
 		Message: "Login berhasil!",
@@ -200,7 +181,6 @@ func (h *AuthHandler) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 
 // ChangePasswordHandler menangani permintaan perubahan password.
 func (h *AuthHandler) ChangePasswordHandler(w http.ResponseWriter, r *http.Request) {
-	log.Printf("INFO: Menerima permintaan ubah password dari alamat IP: %s", r.RemoteAddr)
 	w.Header().Set("Content-Type", "application/json")
 
 	var req struct {
@@ -214,7 +194,7 @@ func (h *AuthHandler) ChangePasswordHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	user, ok := h.Store.GetUser(req.Email)
+	user, ok := h.AuthSvc.UserStore.GetUser(req.Email) // Akses UserStore melalui AuthSvc
 	if !ok {
 		http.Error(w, `{"message":"Pengguna tidak ditemukan."}`, http.StatusNotFound)
 		return
@@ -225,7 +205,7 @@ func (h *AuthHandler) ChangePasswordHandler(w http.ResponseWriter, r *http.Reque
 		json.NewEncoder(w).Encode(model.Response{Message: "Kata sandi lama salah.", Success: false})
 		return
 	}
-	
+
 	if bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.NewPassword)) == nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(model.Response{Message: "Kata sandi baru tidak boleh sama dengan kata sandi lama.", Success: false})
@@ -244,23 +224,21 @@ func (h *AuthHandler) ChangePasswordHandler(w http.ResponseWriter, r *http.Reque
 		http.Error(w, `{"message":"Terjadi kesalahan internal pada server."}`, http.StatusInternalServerError)
 		return
 	}
-	
+
 	user.PasswordHash = string(hashedPassword)
 
-	if err := h.Store.UpdateUser(req.Email, user); err != nil {
+	if err := h.AuthSvc.UserStore.UpdateUser(req.Email, user); err != nil {
 		log.Printf("ERROR: Gagal memperbarui password untuk email %s: %v", req.Email, err)
 		http.Error(w, `{"message":"Gagal memperbarui kata sandi."}`, http.StatusInternalServerError)
 		return
 	}
 
-	log.Printf("INFO: Pengguna %s berhasil mengubah kata sandi.", req.Email)
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(model.Response{Message: "Kata sandi berhasil diubah.", Success: true})
 }
 
 // StatusHandler adalah contoh halaman yang dilindungi.
 func StatusHandler(w http.ResponseWriter, r *http.Request) {
-	log.Printf("INFO: Halaman terproteksi diakses dari IP: %s", r.RemoteAddr)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(model.Response{Message: "Selamat datang di area terproteksi!", Success: true})
 }

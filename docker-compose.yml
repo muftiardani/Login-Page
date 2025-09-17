@@ -8,6 +8,9 @@ services:
       dockerfile: Dockerfile.frontend
     ports:
       - "5173:80"
+    depends_on:
+      backend:
+        condition: service_healthy
 
   # Layanan Backend (Go API)
   backend:
@@ -21,7 +24,14 @@ services:
       JWT_SECRET_KEY: "kunci_rahasia_super_aman_untuk_docker"
       DATABASE_URL: "postgres://postgres:arda123@db:5432/LoginDB?sslmode=disable"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8080/api/status || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   # Layanan Database (PostgreSQL)
   db:
@@ -34,6 +44,11 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d LoginDB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres_data:

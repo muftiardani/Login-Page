@@ -2,8 +2,21 @@ package validator
 
 import (
 	"errors"
+	"net/mail"
 	"unicode"
 )
+
+// ErrInvalidCredentials digunakan saat email atau password salah.
+var ErrInvalidCredentials = errors.New("email atau kata sandi yang Anda masukkan salah")
+
+// ValidateEmail memeriksa apakah format email valid.
+func ValidateEmail(email string) error {
+	_, err := mail.ParseAddress(email)
+	if err != nil {
+		return errors.New("format email tidak valid")
+	}
+	return nil
+}
 
 // ValidatePassword memeriksa apakah kata sandi memenuhi kriteria keamanan.
 func ValidatePassword(password string) error {
